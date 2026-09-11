@@ -17,7 +17,7 @@ extends Node
 ## [/codeblock]
 
 const SECTIONS := 7
-const CHECKS := 71
+const CHECKS := 82
 
 var _passed := 0
 var _failed := 0
@@ -226,6 +226,30 @@ func _test_election() -> void:
 	l.migrate_from(&"bob")
 	_check(l.elect_host() == &"", "an empty session elects nobody, rather than a stale id")
 
+	# `note_latency` had no caller. It is DELIBERATELY not part of the election -- the
+	# order is stable, then longest in the session, then the lowest id, and adding a
+	# measured number to that would make two peers able to elect differently -- so the
+	# check is that it is recorded and reported and changes nothing about who hosts.
+	var latency_lobby := DotP2PLobby.new()
+	latency_lobby.add_member(&"ada", "Ada", 100)
+	latency_lobby.add_member(&"bob", "Bob", 200)
+	var before_host := latency_lobby.elect_host()
+	latency_lobby.note_latency(&"ada", 300)
+	latency_lobby.note_latency(&"bob", 10)
+	_check(
+		latency_lobby.elect_host() == before_host,
+		"a measured latency does not move the election, so two peers cannot elect differently"
+	)
+	_check(
+		"\n".join(Array(latency_lobby.describe_lines())).contains("300"),
+		"while it is still reported, which is what an operator looks at"
+	)
+	latency_lobby.note_latency(&"nobody", 5)
+	_check(
+		not latency_lobby.has(&"nobody"),
+		"and a reading about somebody who is not here creates nobody"
+	)
+
 
 # --- 5 ----------------------------------------------------------------------
 
@@ -319,6 +343,75 @@ func _test_session() -> void:
 
 	host.queue_free()
 	guest.queue_free()
+
+	# `discoverable` was a documented setting nothing read: a lobby could ask to be listed
+	# and the request reached nobody. Both positions are tested, because the default is the
+	# one that has to keep working -- a lobby is reachable by its code either way, and the
+	# flag decides only whether a browser may show it without one.
+	DotP2PSignallerLoopback.reset_all()
+	var quiet := _session(&"quiet")
+	var quiet_code: String = quiet.host("Quiet").value
+	_check(
+		DotP2PSignallerLoopback.room_info(quiet_code).get("discoverable", null) == false,
+		"a lobby announces that it is not to be listed"
+	)
+	_check(
+		not DotP2PSignallerLoopback.listed_codes().has(quiet_code),
+		"and a browser reading the signalling service does not show it"
+	)
+
+	var open_session := _session(&"open")
+	open_session.config.discoverable = true
+	var open_code: String = open_session.host("Open").value
+	_check(
+		DotP2PSignallerLoopback.room_info(open_code).get("discoverable", null) == true,
+		"a lobby that asked to be listed says so in its announcement"
+	)
+	_check(
+		DotP2PSignallerLoopback.listed_codes().has(open_code),
+		"and the browser shows that one"
+	)
+	_check(
+		DotP2PSignallerLoopback.listed_codes().size() == 1,
+		"and only that one, so the flag is what decides rather than the listing being all-or-nothing"
+	)
+
+	quiet.queue_free()
+	open_session.queue_free()
+
+	# `note_seen` had no caller, and it is the one a game MUST call: it is the only thing
+	# that feeds the host timeout, so a host that is talking to everybody looks silent to
+	# `_check_host_alive` and gets migrated away from mid-session. Asserted through the
+	# migration rather than through the field, because the field is private and the
+	# migration is the behaviour.
+	DotP2PSignallerLoopback.reset_all()
+	var beat_host := _session(&"aaa_host")
+	var beat_code: String = beat_host.host("Host").value
+	var beat_guest := _session(&"zzz_guest")
+	# One millisecond, and the elapsed time is produced by a real delay rather than by a
+	# frame: a test that drives the timeout with a number it also chose is asserting its
+	# own arithmetic. `aaa_` and `zzz_` so the id tie-break cannot hand the guest the
+	# session for an unrelated reason.
+	beat_guest.config.host_timeout_sec = 0.001
+	beat_guest.join(beat_code, "Guest")
+	_check(beat_guest.lobby.host_id == beat_host.local_id, "the guest knows who hosts")
+
+	beat_guest.note_seen(beat_host.local_id)
+	beat_guest._process(0.0)
+	_check(
+		beat_guest.lobby.host_id == beat_host.local_id,
+		"a host heard from this instant stays the host"
+	)
+
+	OS.delay_msec(20)
+	beat_guest._process(0.0)
+	_check(
+		beat_guest.lobby.host_id == beat_guest.local_id,
+		"and one nothing has called note_seen about is migrated away from -- which is why a "
+		+ "game that never calls it loses its host mid-session"
+	)
+	beat_host.queue_free()
+	beat_guest.queue_free()
 
 
 # --- 7 ----------------------------------------------------------------------

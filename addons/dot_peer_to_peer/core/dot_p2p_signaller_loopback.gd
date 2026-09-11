@@ -57,6 +57,36 @@ func join(code: String, info: Dictionary) -> DotResult:
 	return DotResult.success(null)
 
 
+## What a lobby announced about itself, or an empty dictionary.
+##
+## A copy, because [code]_switchboards[/code] holds the live one and a Dictionary is a
+## reference in GDScript -- handing it out is how a caller ends up editing the room.
+static func room_info(code: String) -> Dictionary:
+	if not _switchboards.has(code):
+		return {}
+	var board: Dictionary = _switchboards[code]
+	var info: Variant = board.get("info", {})
+	return (info as Dictionary).duplicate(true) if info is Dictionary else {}
+
+
+## The codes a browser may show, which is the ones that said they may be shown.
+##
+## [b]This is the whole of what [code]discoverable[/code] means.[/b] A signalling service
+## is the only thing that can list a lobby, so the flag is a claim the lobby makes in its
+## announcement and this is the one side that acts on it. A lobby that did not ask to be
+## listed is still reachable by its code -- the code IS the invitation -- and that is the
+## difference the setting draws.
+static func listed_codes() -> PackedStringArray:
+	var out := PackedStringArray()
+	for code in _switchboards.keys():
+		var board: Dictionary = _switchboards[code]
+		var info: Variant = board.get("info", {})
+		if info is Dictionary and bool((info as Dictionary).get("discoverable", false)):
+			out.append(String(code))
+	out.sort()
+	return out
+
+
 func send(to: StringName, kind: StringName, payload: Dictionary) -> DotResult:
 	if not _joined or not _switchboards.has(_code):
 		return DotResult.fail(DotError.CODE_STATE, "not in a session")

@@ -144,7 +144,16 @@ func host(display_name: String) -> DotResult:
 	# afterwards never sees it. This family already has the lesson twice: "nothing may be
 	# sent to a peer before it says it can receive", and "a signal is not a state".
 	_bind_signaller()
-	var res := signaller.host(code, {"name": display_name, "max": config.max_peers})
+	# `discoverable` travels in the announcement rather than being kept here, because the
+	# thing that can list a lobby is the signalling service and not the peer. A session
+	# that merely REMEMBERED the flag would be one whose whole documented effect -- being
+	# findable without the code -- happens nowhere: the setting was read by nothing at all
+	# until this line, which is this family's most repeated bug.
+	var res := signaller.host(code, {
+		"name": display_name,
+		"max": config.max_peers,
+		"discoverable": config.discoverable,
+	})
 	if not res.ok:
 		return res.wrap("announcing the session")
 

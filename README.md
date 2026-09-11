@@ -11,7 +11,7 @@ This asset, along with all the others, was built initially with **Claude Code** 
 
 ## Peer-to-peer is a lobby problem before it is a transport problem
 
-The transport half is a dozen calls into an engine module. Everything that actually goes wrong is in the lobby — two people joining the same slot, a code that was already used, a host leaving and nobody agreeing who takes over, **two peers that both think they are the host** — and none of it involves a socket.
+The transport half is a dozen calls into an engine module. Everything that actually goes wrong is in the lobby: two people joining the same slot, a code that was already used, a host leaving and nobody agreeing who takes over, **two peers that both think they are the host**. None of it involves a socket.
 
 `DotP2PLobby` holds no connection at all, which is why every one of those is checked by a headless suite.
 
@@ -27,15 +27,15 @@ The tie-break is total and deterministic, because two peers picking differently 
 
 ## Three honest things this asset will not hide
 
-**Peer-to-peer needs a server to start.** Two machines behind two routers cannot find each other without something both can reach. What P2P removes is the server carrying the *game traffic* — the expensive part. The rendezvous is a few kilobytes, once.
+**Peer-to-peer needs a server to start.** Two machines behind two routers cannot find each other without something both can reach. What P2P removes is the server carrying the *game traffic*, which is the expensive part. The rendezvous is a few kilobytes, once.
 
-**Without a relay, some pairs simply cannot connect.** Somewhere between five and fifteen per cent — symmetric NAT on both sides, carrier-grade NAT, some corporate and mobile networks. `relay_servers` is empty by default because a relay costs bandwidth and nobody can choose that for you; with none configured, those pairs fail **quickly and by name** rather than hanging, because "we could not find a route to that player" is something a person can act on and a spinner is not.
+**Without a relay, some pairs simply cannot connect.** Somewhere between five and fifteen per cent: symmetric NAT on both sides, carrier-grade NAT, and some corporate and mobile networks. `relay_servers` is empty by default because a relay costs bandwidth and nobody can choose that for you; with none configured, those pairs fail **quickly and by name** rather than hanging, because "we could not find a route to that player" is something a person can act on and a spinner is not.
 
-**A host is a player, and can cheat.** There is no version of this where that is untrue, so the only question is what a game exposes. `DotP2PConfig.Trust` makes it a decision: host-authoritative (right for co-op among friends), verified (catches a careless host, not a determined one), or sandboxed — nothing leaves the session, no records, no statistics, no leaderboard. **A host who can cheat and a leaderboard are not two features. They are one exploit.**
+**A host is a player, and can cheat.** There is no version of this where that is untrue, so the only question is what a game exposes. `DotP2PConfig.Trust` makes it a decision: host-authoritative (right for co-op among friends), verified (catches a careless host, not a determined one), or sandboxed, where nothing leaves the session: no records, no statistics, no leaderboard. **A host who can cheat and a leaderboard are not two features. They are one exploit.**
 
 ## The transport is never named
 
-Godot's WebRTC ships as an optional GDExtension on native and is built into the web export. On a desktop build without it, every WebRTC class is simply **absent** — and a script that so much as *mentions* the identifier fails to compile, taking every script that references it down as a cascade of errors in files nobody touched.
+Godot's WebRTC ships as an optional GDExtension on native and is built into the web export. On a desktop build without it, every WebRTC class is simply **absent**, and a script that so much as *mentions* the identifier fails to compile, taking every script that references it down as a cascade of errors in files nobody touched.
 
 So everything goes through `ClassDB.instantiate` by string, exactly the way dot-core reaches ENet on web. A build without it still parses, still runs, and says which of the two reasons it is:
 
@@ -46,7 +46,7 @@ if not DotP2PSession.available():
 
 ## The join code alphabet matters more than its length
 
-`23456789ABCDEFGHJKLMNPQRSTUVWXYZ` — no 0, O, 1, I or l. A player reading their code aloud and the other person typing a different one is the commonest support request any game with a join code has. Six characters from that alphabet is about a billion codes.
+`23456789ABCDEFGHJKLMNPQRSTUVWXYZ`, with no 0, O, 1, I or l. A player reading their code aloud and the other person typing a different one is the commonest support request any game with a join code has. Six characters from that alphabet is about a billion codes.
 
 A code is checked for **shape** before anything is looked up, which is both a better answer for a typo and not a way to find out which sessions exist.
 
