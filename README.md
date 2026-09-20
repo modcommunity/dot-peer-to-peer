@@ -73,6 +73,6 @@ Copy `addons/dot_peer_to_peer/` and [`dot-core`](https://github.com/modcommunity
 
 [dot-core](https://github.com/modcommunity/dot-core). Nothing else. WebRTC is optional and is reached without being named.
 
-## License
+## Licence
 
-MIT.
+MIT. See [LICENSE](LICENSE).
