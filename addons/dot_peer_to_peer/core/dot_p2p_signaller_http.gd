@@ -34,6 +34,11 @@ var _code: String = ""
 var _cursor: int = 0
 var _joined := false
 
+## Whether the last request to the rendezvous failed, so an outage is logged on its EDGES:
+## [method poll] runs every [member poll_interval_sec], and a WARN per poll while the
+## server is down is a line a second that buries the one saying when it started.
+var _failing := false
+
 
 func _init(p_base_url: String, p_id: StringName, http: DotHttp = null) -> void:
 	base_url = p_base_url.rstrip("/")
@@ -86,6 +91,7 @@ func poll() -> DotResult:
 		return DotResult.success(0)
 	var url := "%s/poll?code=%s&id=%s&since=%d" % [base_url, _code, id, _cursor]
 	var res: DotResult = await _http.get_json(url)
+	_note("poll", res)
 	if not res.ok:
 		return res
 	var body: Variant = res.value
@@ -125,4 +131,30 @@ func _post(route: String, body: Dictionary) -> DotResult:
 	# access rather than to the call, so the coroutine is never awaited at all -- which is
 	# in this family's own list of traps.
 	var res: DotResult = await _http.post_json("%s/%s" % [base_url, route], body)
+	_note(route, res)
 	return res
+
+
+## WARN when the rendezvous starts failing, DEBUG while it goes on, INFO when it answers
+## again. WARN rather than ERROR because nothing is lost yet -- a poll is retried and a
+## player can try to host again -- but a session that cannot meet anybody looks, from
+## inside the game, exactly like nobody being online.
+func _note(route: String, res: DotResult) -> void:
+	if res.ok:
+		if _failing:
+			_failing = false
+			DotLog.info(CHANNEL, "the rendezvous is answering again", {"url": base_url})
+		return
+
+	var fields := {
+		"url": base_url,
+		"route": route,
+		"code": res.code(),
+		"error": res.error.message if res.error != null else "",
+	}
+
+	if _failing:
+		DotLog.debug(CHANNEL, "the rendezvous is still failing", fields)
+	else:
+		_failing = true
+		DotLog.warn(CHANNEL, "the rendezvous is not answering", fields)
