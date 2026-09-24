@@ -50,7 +50,10 @@ func join(code: String, info: Dictionary) -> DotResult:
 	for other_id in peers.keys():
 		if other_id == id:
 			continue
-		(peers[other_id] as DotP2PSignallerLoopback).received.emit({
+		# Not this class's own name. A script that names itself in an expression, loaded after
+		# its base, cuts Godot 4.7.2's exit teardown short and leaks every script loaded before
+		# it. See docs/gdscript-hazards.md, "A script that names itself".
+		(peers[other_id] as DotP2PSignaller).received.emit({
 			"from": String(id), "kind": "joined", "payload": info
 		})
 		received.emit({"from": String(other_id), "kind": "present", "payload": {}})
@@ -95,11 +98,11 @@ func send(to: StringName, kind: StringName, payload: Dictionary) -> DotResult:
 	if to == &"":
 		for other_id in peers.keys():
 			if other_id != id:
-				(peers[other_id] as DotP2PSignallerLoopback).received.emit(message)
+				(peers[other_id] as DotP2PSignaller).received.emit(message)
 		return DotResult.success(null)
 	if not peers.has(to):
 		return DotResult.fail(DotError.CODE_INVALID, "'%s' is not in this session" % to)
-	(peers[to] as DotP2PSignallerLoopback).received.emit(message)
+	(peers[to] as DotP2PSignaller).received.emit(message)
 	return DotResult.success(null)
 
 
@@ -110,7 +113,7 @@ func leave() -> void:
 	var peers: Dictionary = board["peers"]
 	peers.erase(id)
 	for other_id in peers.keys():
-		(peers[other_id] as DotP2PSignallerLoopback).received.emit({
+		(peers[other_id] as DotP2PSignaller).received.emit({
 			"from": String(id), "kind": "left", "payload": {}
 		})
 	if peers.is_empty():
