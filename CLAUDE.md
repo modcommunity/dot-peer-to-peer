@@ -39,6 +39,8 @@ A host *claim* is checked against the election before it is believed. A peer tha
 
 **The session announced itself before it could hear the reply.** `join()` called `signaller.join()` and *then* connected its handler — and the loopback signaller delivers "here is who is already here" synchronously, inside that call. The joiner ended up alone in a lobby with two people in it. This family has the lesson twice already: *"nothing may be sent to a peer before it says it can receive"* (dot-server's signon) and *"a signal is not a state"* (game-playground's black screen). Bind first, then announce.
 
+**And it did not wait for the answer.** `host()` and `join()` called `signaller.host()`/`join()` without `await`, and `DotP2PSignallerHttp`'s are coroutines (a POST). In Godot 4.7 that is not a late result: it is a SCRIPT ERROR, "Trying to call an async function without await", which aborts `host()` and hands the caller null with the session still idle. Every test used the loopback signaller, which answers synchronously, so the one real signaller had never worked. Both are awaited now, which makes `host()` and `join()` coroutines — **await them** — and costs nothing with a synchronous signaller, since an await on a plain value does not suspend. The suite's section 8 runs the real HTTP signaller over a `DotHttp` that answers a frame later.
+
 **And `add_member` quietly decided who hosts.** The convenience — "if nobody is hosting, this one is" — makes the answer depend on which of two messages arrived first, so a joiner that added itself before its signaller had spoken declared itself host of somebody else's session. It is the same bug as the first one wearing different clothes, and it survived the fix to the first one. The lobby now decides nothing; `DotP2PSession` sets `host_id` when it hosts and elects otherwise, and the suite asserts a fresh lobby has **no** host.
 
 ## The three uncomfortable facts, and where each one lives
@@ -104,4 +106,4 @@ done
 timeout 120 godot --headless --path . res://examples/p2p_selftest.tscn
 ```
 
-7 sections, 71 checks, none of which needs a network or the WebRTC extension. **The last section is the one to keep**: it asserts that asking about an absent transport is a refusal with a reason rather than a crash, which is the only thing a machine without the extension can prove and is exactly the thing that would otherwise break silently.
+8 sections, 87 checks, none of which needs a network or the WebRTC extension. **The last section is the one to keep**: it asserts that asking about an absent transport is a refusal with a reason rather than a crash, which is the only thing a machine without the extension can prove and is exactly the thing that would otherwise break silently.

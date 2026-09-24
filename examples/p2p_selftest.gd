@@ -16,8 +16,8 @@ extends Node
 ## godot --headless --path . res://examples/p2p_selftest.tscn
 ## [/codeblock]
 
-const SECTIONS := 7
-const CHECKS := 82
+const SECTIONS := 8
+const CHECKS := 87
 
 var _passed := 0
 var _failed := 0
@@ -34,12 +34,13 @@ func _run() -> void:
 	_line("")
 
 	_test_config_is_honest()
-	_test_codes()
+	await _test_codes()
 	_test_lobby()
 	_test_election()
 	_test_signalling()
-	_test_session()
-	_test_transport_absence()
+	await _test_session()
+	await _test_a_signaller_that_awaits()
+	await _test_transport_absence()
 
 	_line("")
 	_line("%d sections, %d passed, %d failed" % [_section_count, _passed, _failed])
@@ -127,7 +128,7 @@ func _test_codes() -> void:
 	# Shape is checked before anything is looked up: a lookup is how somebody finds out
 	# which codes exist, and "that is not a code" is a better answer for a typo anyway.
 	var s := _session(&"a")
-	var res := s.join("nope", "Ada")
+	var res: DotResult = await s.join("nope", "Ada")
 	_check(not res.ok, "a malformed code is refused")
 	_check(
 		res.error.message.contains("not a join code"),
@@ -309,14 +310,15 @@ func _test_session() -> void:
 	var host := _session(&"ada")
 	var guest := _session(&"bob")
 
-	var code_res := host.host("Ada")
+	var code_res: DotResult = await host.host("Ada")
 	_check(code_res.ok, "hosting produces a join code")
 	var code: String = code_res.value
 	_check(DotP2PLobby.is_code_shaped(code, 6), "which is well formed")
 	_check(host.is_host(), "and the host is the host")
 	_check(host.lobby.members.size() == 1, "with one member")
 
-	_check(guest.join(code, "Bob").ok, "the guest joins")
+	var joined: DotResult = await guest.join(code, "Bob")
+	_check(joined.ok, "the guest joins")
 	_check(host.lobby.members.size() == 2, "and the host sees them")
 	_check(guest.lobby.members.size() == 2, "and they see the host")
 	_check(not guest.is_host(), "the guest is not the host")
@@ -350,7 +352,7 @@ func _test_session() -> void:
 	# flag decides only whether a browser may show it without one.
 	DotP2PSignallerLoopback.reset_all()
 	var quiet := _session(&"quiet")
-	var quiet_code: String = quiet.host("Quiet").value
+	var quiet_code: String = (await quiet.host("Quiet")).value
 	_check(
 		DotP2PSignallerLoopback.room_info(quiet_code).get("discoverable", null) == false,
 		"a lobby announces that it is not to be listed"
@@ -362,7 +364,7 @@ func _test_session() -> void:
 
 	var open_session := _session(&"open")
 	open_session.config.discoverable = true
-	var open_code: String = open_session.host("Open").value
+	var open_code: String = (await open_session.host("Open")).value
 	_check(
 		DotP2PSignallerLoopback.room_info(open_code).get("discoverable", null) == true,
 		"a lobby that asked to be listed says so in its announcement"
@@ -386,14 +388,14 @@ func _test_session() -> void:
 	# migration is the behaviour.
 	DotP2PSignallerLoopback.reset_all()
 	var beat_host := _session(&"aaa_host")
-	var beat_code: String = beat_host.host("Host").value
+	var beat_code: String = (await beat_host.host("Host")).value
 	var beat_guest := _session(&"zzz_guest")
 	# One millisecond, and the elapsed time is produced by a real delay rather than by a
 	# frame: a test that drives the timeout with a number it also chose is asserting its
 	# own arithmetic. `aaa_` and `zzz_` so the id tie-break cannot hand the guest the
 	# session for an unrelated reason.
 	beat_guest.config.host_timeout_sec = 0.001
-	beat_guest.join(beat_code, "Guest")
+	await beat_guest.join(beat_code, "Guest")
 	_check(beat_guest.lobby.host_id == beat_host.local_id, "the guest knows who hosts")
 
 	beat_guest.note_seen(beat_host.local_id)
@@ -450,13 +452,55 @@ func _test_transport_absence() -> void:
 
 	var no_meeting := _session(&"lonely")
 	no_meeting.signaller = null
-	var refused := no_meeting.host("Nobody")
+	var refused: DotResult = await no_meeting.host("Nobody")
 	_check(not refused.ok, "hosting with no signaller is refused")
 	_check(
 		refused.error.message.contains("nowhere to meet"),
 		"because peer-to-peer needs a server to start, whatever the marketing says"
 	)
 	no_meeting.queue_free()
+
+
+# --- A signaller that awaits ---------------------------------------------------
+
+## A DotHttp that answers a POST a frame later, the way a real one does, without a socket.
+class SlowHttp extends DotHttp:
+	var posted: Array[String] = []
+
+	func post_json(path: String, _body: Variant, _headers: Dictionary = {}) -> DotResult:
+		posted.append(path)
+		await Engine.get_main_loop().process_frame
+		if path.ends_with("/join"):
+			return DotResult.success({"peers": ["ada"]})
+		return DotResult.success({})
+
+
+## The real HTTP signaller, whose host() and join() are coroutines. The session called them
+## without `await`, which is a SCRIPT ERROR that aborts host() and returns null with the
+## session left idle -- and every other test here uses the loopback signaller, which answers
+## synchronously, so nothing noticed. Put the missing await back and this section fails.
+func _test_a_signaller_that_awaits() -> void:
+	_section("The HTTP signaller answers later, and the session waits for it")
+
+	var http := SlowHttp.new()
+	add_child(http)
+
+	var host := _session(&"ada")
+	host.signaller = DotP2PSignallerHttp.new("http://rendezvous.invalid", &"ada", http)
+	var hosted: DotResult = await host.host("Ada")
+	_check(hosted != null and hosted.ok, "hosting through a coroutine signaller returns a result")
+	_check(host.state() == &"hosting", "and the session is hosting, not left idle")
+	_check(http.posted.size() == 1 and http.posted[0].ends_with("/host"), "having announced itself")
+
+	var guest := _session(&"bob")
+	guest.signaller = DotP2PSignallerHttp.new("http://rendezvous.invalid", &"bob", http)
+	var joined: DotResult = await guest.join(String(hosted.value) if hosted != null and hosted.ok else "AAAAAA", "Bob")
+	_check(joined != null and joined.ok and guest.state() == &"joining", "joining through one works too")
+	_check(guest.lobby.members.size() == 2, "and the peers the rendezvous named are in the lobby")
+
+	host.queue_free()
+	guest.queue_free()
+	http.queue_free()
 
 
 # --- Harness ---------------------------------------------------------------

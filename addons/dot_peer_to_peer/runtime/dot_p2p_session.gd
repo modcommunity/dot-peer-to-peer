@@ -9,9 +9,9 @@ extends Node
 ## p2p.signaller = DotP2PSignallerHttp.new(url)
 ## add_child(p2p)
 ##
-## var res := p2p.host("Ada")          # returns a join code
+## var res: DotResult = await p2p.host("Ada")   # returns a join code
 ## # or
-## p2p.join("K7M4PX", "Bob")
+## await p2p.join("K7M4PX", "Bob")
 ## [/codeblock]
 ##
 ## [b]The transport is reached through [method ClassDB.instantiate] and never by name.[/b]
@@ -127,7 +127,14 @@ static func unavailable_reason() -> String:
 
 # --- Hosting and joining ----------------------------------------------------
 
-## Starts a session and returns its join code.
+## Starts a session and returns its join code. A coroutine: await it.
+##
+## [b]Awaited because a signaller's host() may be one.[/b] [DotP2PSignallerHttp]'s is -- it
+## is a POST -- and calling a coroutine without `await` is not a late result, it is a
+## SCRIPT ERROR ("Trying to call an async function without await") that aborts this
+## function and hands the caller null, with the session left idle. Every test used the
+## loopback signaller, which answers synchronously, so the one real signaller never worked
+## and nothing said so. Awaiting a synchronous one costs nothing: it does not suspend.
 func host(display_name: String) -> DotResult:
 	var guard := _precheck()
 	if not guard.ok:
@@ -149,7 +156,7 @@ func host(display_name: String) -> DotResult:
 	# that merely REMEMBERED the flag would be one whose whole documented effect -- being
 	# findable without the code -- happens nowhere: the setting was read by nothing at all
 	# until this line, which is this family's most repeated bug.
-	var res := signaller.host(code, {
+	var res: DotResult = await signaller.host(code, {
 		"name": display_name,
 		"max": config.max_peers,
 		"discoverable": config.discoverable,
@@ -178,7 +185,7 @@ func host(display_name: String) -> DotResult:
 	return DotResult.success(code)
 
 
-## Joins an existing session by code.
+## Joins an existing session by code. A coroutine, for the reason [method host] is.
 func join(code: String, display_name: String) -> DotResult:
 	var guard := _precheck()
 	if not guard.ok:
@@ -200,7 +207,7 @@ func join(code: String, display_name: String) -> DotResult:
 	# call never sees any of it -- which leaves a joiner alone in a lobby that has four
 	# people in it.
 	_bind_signaller()
-	var res := signaller.join(tidy, {"name": display_name})
+	var res: DotResult = await signaller.join(tidy, {"name": display_name})
 	if not res.ok:
 		return res.wrap("joining")
 

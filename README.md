@@ -59,8 +59,8 @@ p2p.signaller = DotP2PSignallerHttp.new(url, my_id, http)
 add_child(p2p)
 p2p.setup()
 
-var code = p2p.host("Ada").value      # show this to a friend
-p2p.join("K7M4PX", "Bob")             # or type theirs
+var code = (await p2p.host("Ada")).value   # show this to a friend
+await p2p.join("K7M4PX", "Bob")                # or type theirs
 ```
 
 `DotP2PSignaller` is four verbs. A loopback one ships for suites and split screen; an HTTP one ships for anything with a URL and four routes. A backbone, a lobby service, or a WebSocket the game already has are all subclasses.
