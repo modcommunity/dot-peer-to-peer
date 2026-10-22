@@ -1,0 +1,13 @@
+# comments
+# Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
+addons/dot_peer_to_peer/core/dot_p2p_config.gd::long_block	10
+addons/dot_peer_to_peer/core/dot_p2p_lobby.gd::banner	1
+addons/dot_peer_to_peer/core/dot_p2p_lobby.gd::long_block	7
+addons/dot_peer_to_peer/core/dot_p2p_signaller.gd::long_block	2
+addons/dot_peer_to_peer/core/dot_p2p_signaller_http.gd::long_block	3
+addons/dot_peer_to_peer/core/dot_p2p_signaller_loopback.gd::long_block	5
+addons/dot_peer_to_peer/dot_peer_to_peer_plugin.gd::long_block	1
+addons/dot_peer_to_peer/runtime/dot_p2p_session.gd::banner	5
+addons/dot_peer_to_peer/runtime/dot_p2p_session.gd::long_block	13
+examples/p2p_selftest.gd::banner	9
+examples/p2p_selftest.gd::long_block	8
