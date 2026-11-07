@@ -29,7 +29,7 @@ Paths except `examples/` are in `addons/dot_peer_to_peer/`.
 
 ## Running and testing
 
-The family's two steps ([game-dev/CLAUDE.md](../../CLAUDE.md#validating-anything)), then `timeout 120 godot --headless --path . res://examples/p2p_selftest.tscn`. Keep the "A build with no WebRTC says so" section: asking about an absent transport must be a refusal with a reason, which is the only thing a machine without the extension can prove. The transport itself is not exercised by any suite here.
+The family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything)), then `timeout 120 godot --headless --path . res://examples/p2p_selftest.tscn`. Keep the "A build with no WebRTC says so" section: asking about an absent transport must be a refusal with a reason, which is the only thing a machine without the extension can prove. The transport itself is not exercised by any suite here.
 
 ## Rules that bite
 
