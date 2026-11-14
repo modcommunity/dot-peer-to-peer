@@ -1,5 +1,3 @@
-# dot-peer-to-peer
-
 Sessions that players host for each other: join codes, a lobby, readiness, deterministic host migration, and a plain account of what NAT will not let you do.
 
 Part of TMC's **Dot** collection: modular, MIT-licensed building blocks for games on the TMC platform (only the TMC website back end is closed). It was built with Claude Code and its headless suite passes, but little of it has met real players yet, so expect rough edges and please report what you find.
