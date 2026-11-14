@@ -62,7 +62,7 @@ extends DotConfig
 ## with a join code has.
 @export_range(4, 16, 1) var code_length: int = 6
 
-@export_range(2, 64, 1) var max_peers: int = 8
+@export_range(2, 64, 1, "or_greater") var max_peers: int = 8
 
 ## Whether the lobby is listed anywhere, or only reachable by its code.
 @export var discoverable: bool = false
