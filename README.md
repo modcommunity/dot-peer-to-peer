@@ -4,7 +4,7 @@ Part of TMC's **Dot** collection: modular, MIT-licensed building blocks for game
 
 ## Install
 
-Copy `addons/dot_peer_to_peer/` and [dot-core](https://github.com/modcommunity/dot-core)'s `addons/dot_core/` into your project and enable dot-peer-to-peer in **Project > Project Settings > Plugins**. dot-core is the only dependency. WebRTC is optional and is reached by name at runtime.
+Copy `addons/dot_peer_to_peer/` and [dot-core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable dot-peer-to-peer in **Project > Project Settings > Plugins**. dot-core is the only dependency. WebRTC is optional and is reached by name at runtime.
 
 ## Use
 
