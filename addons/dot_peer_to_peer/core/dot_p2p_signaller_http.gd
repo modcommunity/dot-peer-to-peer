@@ -6,7 +6,7 @@ extends DotP2PSignaller
 ## [b]Polling rather than a socket, and that is a deliberate trade.[/b] A WebSocket is
 ## better in every way except one: it needs a server that speaks WebSocket, and this exists
 ## so that a deployment with nothing but a static host and a tiny endpoint can still get two
-## players together. It uses dot-core's [DotHttp], which uses [HTTPRequest]
+## players together. It uses GameSpice Core's [DotHttp], which uses [HTTPRequest]
 ## unconditionally, because a browser has no [HTTPClient] at all.
 ##
 ## The poll is short-lived by design: signalling ends when the peers are connected, and a

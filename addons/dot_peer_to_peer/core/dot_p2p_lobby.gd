@@ -97,7 +97,7 @@ func member_ids() -> PackedStringArray:
 	for id in members.keys():
 		out.append(String(id))
 	# Sorted as Strings, never as StringNames. Godot compares StringNames by their interned
-	# pointer, so a sort over them gives two peers two different orders -- which in dot-net
+	# pointer, so a sort over them gives two peers two different orders -- which in GameSpice Net
 	# gave two clients two different wire ids for one message type and was invisible until a
 	# real browser connected. Every peer here has to agree about this order, because the
 	# host election is derived from it.

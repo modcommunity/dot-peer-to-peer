@@ -1,10 +1,10 @@
 # History
 
-What building dot-peer-to-peer found. Three forms of one bug: an answer that depended on which message arrived first. The rules are in [design.md](design.md).
+What building GameSpice Peer-to-Peer found. Three forms of one bug: an answer that depended on which message arrived first. The rules are in [design.md](design.md).
 
 ## The session announced itself before it could hear the reply
 
-`join()` called `signaller.join()` and *then* connected its handler, and the loopback signaller delivers "here is who is already here" synchronously inside that call. The joiner ended up alone in a lobby with two people in it. The family has the lesson twice already: nothing may be sent to a peer before it says it can receive (dot-server's signon), and a signal is not a state. Bind first, then announce.
+`join()` called `signaller.join()` and *then* connected its handler, and the loopback signaller delivers "here is who is already here" synchronously inside that call. The joiner ended up alone in a lobby with two people in it. The family has the lesson twice already: nothing may be sent to a peer before it says it can receive (GameSpice Server's signon), and a signal is not a state. Bind first, then announce.
 
 ## It did not wait for the answer
 

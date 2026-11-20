@@ -17,9 +17,9 @@ extends Node
 ## [b]The transport is reached through [method ClassDB.instantiate] and never by name.[/b]
 ## Godot's WebRTC ships as an optional GDExtension on native platforms and is built into
 ## the web export, so on a desktop build without it every WebRTC class is simply absent —
-## and a script that so much as [i]mentions[/i] the identifier fails to compile. dot-core's
+## and a script that so much as [i]mentions[/i] the identifier fails to compile. GameSpice Core's
 ## `DotTransportENet` reaches ENet exactly this way for the same reason on web, and
-## dot-core's own notes said a WebRTC transport "would be untestable in a default install".
+## GameSpice Core's own notes said a WebRTC transport "would be untestable in a default install".
 ## This is where it went, built so that an install without it still parses, still runs,
 ## and says what is missing.
 
@@ -47,7 +47,7 @@ var signaller: DotP2PSignaller = null
 
 ## This peer's own id. Pseudonymous, and not an account id.
 ##
-## [b]Never an account id, for the reason dot-user exists.[/b] A join code is shared in
+## [b]Never an account id, for the reason GameSpice User exists.[/b] A join code is shared in
 ## public — in a chat, on a stream — and the ids in a lobby are visible to everybody in it.
 ## An account id there is a permanent identifier a stranger can collect.
 var local_id: StringName = &""
@@ -90,9 +90,9 @@ func _exit_tree() -> void:
 ##
 ## `OS.get_unique_id()` is deliberately not used. It **pushes an error and then returns the
 ## empty string** on web and iOS — a red line on the page a player has open, naming a
-## function nobody called on purpose — which is why dot-core grew
+## function nobody called on purpose — which is why GameSpice Core grew
 ## `DotPlatform.has_unique_id()`. And a hardware id in a lobby is a permanent identifier a
-## stranger can collect, which is the whole reason dot-user is pseudonymous per scope.
+## stranger can collect, which is the whole reason GameSpice User is pseudonymous per scope.
 func _make_local_id() -> StringName:
 	var bytes := PackedByteArray()
 	for _i in range(8):
@@ -291,7 +291,7 @@ func create_peer() -> DotResult:
 	# ClassDB.instantiate, never `WebRTCMultiplayerPeer.new()`. The identifier does not
 	# exist in a build without the extension and a script that mentions it fails to
 	# COMPILE -- taking every script that references this one down with it, as a cascade
-	# of errors in files nobody touched. Exactly how dot-core reaches ENet on web.
+	# of errors in files nobody touched. Exactly how GameSpice Core reaches ENet on web.
 	var peer: Object = ClassDB.instantiate("WebRTCMultiplayerPeer")
 	if peer == null:
 		return DotResult.fail(DotError.CODE_UNSUPPORTED, "WebRTC would not instantiate")

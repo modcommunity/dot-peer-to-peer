@@ -1,16 +1,16 @@
-# dot-peer-to-peer
+# GameSpice Peer-to-Peer
 
 Sessions players host for each other over WebRTC: a lobby with join codes and a host election every peer computes alone, signallers (loopback, HTTP), and a session node, with an honest account of what peer-to-peer costs (a rendezvous, a relay, a host who can cheat).
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is specific to peer-to-peer.
 
-**The distributable is `addons/dot_peer_to_peer/`.** It requires [dot-core](../dot-core) and nothing else (`ln -s ../../dot-core/addons/dot_core addons/dot_core`, gitignored). WebRTC is an optional GDExtension and is reached without being named.
+**The distributable is `addons/dot_peer_to_peer/`.** It requires [GameSpice Core](../dot-core) and nothing else (`ln -s ../../dot-core/addons/dot_core addons/dot_core`, gitignored). WebRTC is an optional GDExtension and is reached without being named.
 
 ## Read before
 
 | Read | Before |
 | --- | --- |
-| [docs/design.md](docs/design.md) | anything: why it is separate from dot-core, the unnamed transport, the election, bind-then-announce, the three costs, codes, ids, signallers, what is not here |
+| [docs/design.md](docs/design.md) | anything: why it is separate from GameSpice Core, the unnamed transport, the election, bind-then-announce, the three costs, codes, ids, signallers, what is not here |
 | [docs/history.md](docs/history.md) | touching `host()`, `join()` or the lobby: three ordering bugs |
 
 ## Layout

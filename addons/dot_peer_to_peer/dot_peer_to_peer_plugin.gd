@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-## Editor entry point for dot-peer-to-peer. Registers inspector types only.
+## Editor entry point for GameSpice Peer-to-Peer. Registers inspector types only.
 ##
 ## No autoloads: two peers in one process is how this addon is tested, and a global would
 ## make them one.
