@@ -1,4 +1,4 @@
-[![Peer-to-Peer - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/241-dot-peer-to-peer)
+[![Peer-to-Peer - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/77-gs-peer-to-peer)
 
 Sessions that players host for each other: join codes, a lobby, readiness, deterministic host migration, and a plain account of what NAT will not let you do.
 
